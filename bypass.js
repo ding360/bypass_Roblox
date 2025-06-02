@@ -17,8 +17,8 @@
 // @require     https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js 
 // @resource updateMeta https://raw.githubusercontent.com/ding360/bypass_Roblox/main/bypass.js
 // @downloadURL https://raw.githubusercontent.com/ding360/bypass_Roblox/main/bypass.js
-// @updateURL https://raw.githubusercontent.com/ding360/bypass_Roblox/main/update-meta.js
-// @iconURL https://raw.githubusercontent.com/ding360/bypass_Roblox/refs/heads/main/favicon.ico
+// @updateURL https://raw.githubusercontent.com/ding360/bypass_Roblox/main/bypass.js
+// @icon https://raw.githubusercontent.com/ding360/bypass_Roblox/refs/heads/main/favicon.ico
 // ==/UserScript==
  
 /* ========== 匹配域名列表 ========== */
