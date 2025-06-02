@@ -1,7 +1,7 @@
 // ==UserScript== 
 // @name        广告链接绕过+人机验证破解助手 Pro
 // @namespace   https://github.com/ding360
-// @version     1.05
+// @version     1.06
 // @description 增强版双引擎广告绕过 + 全类型验证码破解 
 // @author      ding360
 // @match       *://*/*
