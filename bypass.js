@@ -1,9 +1,9 @@
 Javascript 复制  // ==UserScript== 
 // @name        广告链接绕过+人机验证破解助手 Pro
-// @namespace   https://github.com/yourname 
+// @namespace   https://github.com/ding360
 // @version     1.03 
 // @description 增强版双引擎广告绕过 + 全类型验证码破解 
-// @author      YourName
+// @author      ding360
 // @match       *://*/*
 // @grant       GM_xmlhttpRequest
 // @grant       GM_notification
@@ -30,7 +30,7 @@ const CONFIG = {
   engines: [
     {
       name: "bypass_city",
-      url: "https://bypass.city/api/v2", 
+      url: "https://bypass.city/", 
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -80,7 +80,7 @@ function initBypassSystem() {
   // 创建悬浮按钮
   const floatingBtn = document.createElement('div'); 
   floatingBtn.id  = 'bypass-floating-btn';
-  floatingBtn.innerHTML  = '🚀 绕过广告链接';
+  floatingBtn.innerHTML  = '🚀 bypass link';
   Object.assign(floatingBtn.style,  {
     position: 'fixed',
     bottom: '20px',
@@ -176,8 +176,8 @@ async function processPageLinks() {
   
   if (adLinks.length  === 0) {
     GM_notification({
-      title: "未检测到广告链接",
-      text: "当前页面没有可处理的广告链接",
+      title: "未检测到链接",
+      text: "当前页面没有可处理的链接",
       timeout: 3000
     });
     return;
@@ -185,7 +185,7 @@ async function processPageLinks() {
  
   GM_notification({
     title: "开始处理",
-    text: `检测到 ${adLinks.length}  个广告链接，正在绕过...`
+    text: `检测到 ${adLinks.length}  个链接，正在绕过...`
   });
  
   for (const link of adLinks) {
@@ -205,7 +205,7 @@ async function processPageLinks() {
     if (finalUrl) {
       link.href  = finalUrl;
       link.style.border  = "2px solid #4caf50";
-      link.title  = "已绕过广告! 原始链接: " + originalHref;
+      link.title  = "已绕过! 原始链接: " + originalHref;
     }
   }
 }
