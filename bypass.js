@@ -1,4 +1,4 @@
-Javascript 复制  // ==UserScript== 
+// ==UserScript== 
 // @name        广告链接绕过+人机验证破解助手 Pro
 // @namespace   https://github.com/ding360
 // @version     1.03 
