@@ -18,6 +18,7 @@ Javascript 复制  // ==UserScript==
 // @resource updateMeta https://raw.githubusercontent.com/yourname/repo/main/update-meta.json 
 // @downloadURL https://raw.githubusercontent.com/ding360/bypass_Roblox/edit/main/bypass.js  
 // @updateURL https://raw.githubusercontent.com/ding360/bypass_Roblox/main/update-meta.json  
+// @iconURL https://github.com/ding360/bypass_Roblox/blob/main/favicon.ico
 // ==/UserScript==
  
 /* ========== 匹配域名列表 ========== */
@@ -79,6 +80,13 @@ const CONFIG = {
 };
  
 /* ========== 核心功能模块 ========== */
+const iconBase64 = 
+ "https://github.com/ding360/bypass_Roblox/blob/main/favicon.ico"
+floatingBtn.innerHTML  = `
+  <img src="${iconBase64}" style="vertical-align: middle; width: 128px; height: 128px; margin-right: 6px;">
+  <span>绕过广告链接</span>
+`;{
+}
 function initBypassSystem() {
   // 创建悬浮按钮
   const floatingBtn = document.createElement('div'); 
