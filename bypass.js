@@ -28,7 +28,37 @@
 // @exclude *://publisher.linkvertise.com/* 
 // @exclude *://linkvertise.com/adfly-notice* 
 // ...（保留原始所有@exclude规则）...
- 
+
+// 在脚本顶部添加配置变量 
+const USER_CONFIG = {
+  position: {x: "left", y: "top"},  // 或"right"/"bottom"
+  icon: "🛡️",               // 自定义图标 
+  hotkey: "Ctrl+Alt+C",        // 自定义快捷键 
+  autoHide: true               // 滚动时自动隐藏 
+};
+// 添加IFRAME封装（规避CSS污染）
+const createIsolatedButton = () => {
+  const iframe = document.createElement('iframe'); 
+  iframe.id  = "bypass-iframe-container";
+  iframe.style.cssText  = `/* 定位样式... */`;
+  document.body.appendChild(iframe); 
+  
+  iframe.contentDocument.write(` 
+    <html>
+      <head>
+        <style>${getIsolatedStyles()}</style>
+      </head>
+      <body>${getButtonHtml()}</body>
+    </html>
+  `);
+}
+// 监听动态内容变化 
+new MutationObserver(() => {
+  if (!document.getElementById(FLOATING_BTN_ID))  {
+    createGlobalFloatingButton();
+  }
+  detectPageAdLinks(); // 持续扫描新内容 
+}).observe(document, {subtree: true, childList: true});
 /* ========== 全局配置 ========== */
 const CONFIG = {
   engineTimeout: 5000,    // 引擎请求超时(毫秒)
@@ -219,7 +249,359 @@ function initEnhancedFloatingUI() {
   // 应用初始样式
   applyUIStyles();
 }
- 
+
+function initBypassSystem() {
+  // 创建悬浮按钮 - 在所有页面都创建
+  const floatingBtn = createFloatingButton();
+  // 自动检测广告链接（原逻辑保留）
+  setTimeout(autoDetectAdLinks, 2000);
+  // 人机验证监听器（原逻辑保留）
+  new MutationObserver(checkAndSolveCaptcha)
+    .observe(document.body,  { childList: true, subtree: true });
+}
+function createFloatingButton() {
+  // 检查是否已经存在，避免重复创建
+  if (document.getElementById('bypass-floating-btn'))  {
+    return;
+  }
+  const floatingBtn = document.createElement('div'); 
+  floatingBtn.id  = 'bypass-floating-btn';
+  floatingBtn.innerHTML  = '🚀 广告破解助手';
+  Object.assign(floatingBtn.style,  {
+    position: 'fixed',
+    bottom: '20px',
+    right: '20px',
+    zIndex: 9999,
+    background: '#4a6cf7',
+    color: 'white',
+    padding: '12px 20px',
+    borderRadius: '30px',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(74, 108, 247, 0.3)',
+    fontWeight: 'bold',
+    userSelect: 'none'
+  });
+  // 添加拖动功能
+  let posX = 0, posY = 0, mouseX = 0, mouseY = 0;
+  floatingBtn.addEventListener('mousedown',  function(e) {
+    e.preventDefault(); 
+    posX = e.clientX  - floatingBtn.offsetLeft; 
+    posY = e.clientY  - floatingBtn.offsetTop; 
+    document.addEventListener('mousemove',  moveElement);
+    document.addEventListener('mouseup',  function() {
+      document.removeEventListener('mousemove',  moveElement);
+    });
+  });
+  function moveElement(e) {
+    floatingBtn.style.left  = (e.clientX  - posX) + 'px';
+    floatingBtn.style.top  = (e.clientY  - posY) + 'px';
+    floatingBtn.style.right  = 'unset';
+    floatingBtn.style.bottom  = 'unset';
+  }
+  // 点击事件：如果当前页面有广告链接则执行绕过，否则尝试破解验证码
+  floatingBtn.addEventListener('click',  function() {
+    // 先尝试处理广告链接
+    const adLinksPresent = document.querySelectorAll('a[href*="adfoc.us"],  a[href*="linkvertise.com"]').length  > 0;
+    if (adLinksPresent) {
+      processPageLinks();
+      GM_notification({ title: "广告绕过", text: "已处理页面广告链接" });
+    } else {
+      // 如果没有广告链接，尝试检测并解决验证码
+      if (checkAndSolveCaptcha()) {
+        GM_notification({ title: "验证码破解", text: "正在处理验证码..." });
+      } else {
+        GM_notification({ title: "提示", text: "当前页面未检测到广告链接或验证码" });
+      }
+    }
+  });
+  document.body.appendChild(floatingBtn); 
+  return floatingBtn;
+}
+// 修改：在autoDetectAdLinks函数中，如果检测到广告链接，可以给悬浮按钮一个提示效果
+function autoDetectAdLinks() {
+  // 检测广告链接的逻辑（原脚本可能有此函数，这里假设没有，我们简单实现提示）
+  const adLinks = detectAdLinks(); // 假设我们有一个检测函数
+  if (adLinks.length  > 0) {
+    const btn = document.getElementById('bypass-floating-btn'); 
+    if (btn) {
+      btn.style.background  = '#ff8c00';
+      btn.innerHTML  = '🚀 检测到广告！点击处理';
+      // 5秒后恢复
+      setTimeout(() => {
+        btn.style.background  = '#4a6cf7';
+        btn.innerHTML  = '🚀 广告破解助手';
+      }, 5000);
+    }
+  }
+}
+// 新增：检测广告链接的通用函数
+function detectAdLinks() {
+  const adHosts = [
+    'adfoc.us', 
+    'linkvertise.com', 
+    // ... 其他广告域名
+  ];
+  const links = Array.from(document.querySelectorAll('a[href]')); 
+  return links.filter(link  => {
+    const href = link.href; 
+    return adHosts.some(host  => href.includes(host)); 
+  });
+}
+
+/* ========== 全局悬浮窗系统 ========== */
+const FLOATING_BTN_ID = "bypass-global-floating-btn";
+function createGlobalFloatingButton() {
+    // 防止重复创建 
+    if (document.getElementById(FLOATING_BTN_ID))  return;
+    
+    const btn = document.createElement('div'); 
+    btn.id  = FLOATING_BTN_ID;
+    btn.innerHTML  = '🔓 广告破解助手';
+    btn.title  = "点击处理当前页面广告链接";
+    
+    // CSS样式确保跨域兼容 
+    btn.style.cssText  = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 2147483647; /* 最大z-index确保置顶 */
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        padding: 12px 25px;
+        border-radius: 30px;
+        cursor: pointer;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        font-weight: bold;
+        font-size: 16px;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        border: none;
+        user-select: none;
+        animation: float 3s ease-in-out infinite;
+        transition: all 0.3s ease;
+    `;
+    
+    // 添加悬停动画 
+    btn.addEventListener('mouseenter',  () => {
+        btn.style.transform  = 'scale(1.05)';
+        btn.style.boxShadow  = '0 8px 25px rgba(0,0,0,0.3)';
+    });
+    
+    btn.addEventListener('mouseleave',  () => {
+        btn.style.transform  = 'scale(1)';
+        btn.style.boxShadow  = '0 6px 20px rgba(0,0,0,0.2)';
+    });
+    
+    // 点击事件处理 
+    btn.addEventListener('click',  handleGlobalButtonClick);
+    
+    document.body.appendChild(btn); 
+    
+    // 添加悬浮动画 
+    const style = document.createElement('style'); 
+    style.textContent  = `
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    `;
+    document.head.appendChild(style); 
+}
+async function handleGlobalButtonClick() {
+    GM_notification({
+        title: "广告破解助手",
+        text: "正在扫描当前页面...",
+        timeout: 2000 
+    });
+    
+    // 1. 尝试检测广告链接 
+    const adLinks = detectPageAdLinks();
+    if (adLinks.length  > 0) {
+        await processPageLinks();
+        return;
+    }
+    
+    // 2. 尝试检测验证码 
+    const captchaSolved = await checkAndSolveCaptcha();
+    if (captchaSolved) return;
+    
+    // 3. 无广告时的备选功能 
+    showContextMenu();
+}
+function showContextMenu() {
+    const btn = document.getElementById(FLOATING_BTN_ID); 
+    btn.innerHTML  = '⏳ 功能菜单';
+    
+    // 创建菜单容器 
+    const menu = document.createElement('div'); 
+    menu.id  = 'bypass-context-menu';
+    menu.style.cssText  = `
+        position: absolute;
+        bottom: 100%;
+        right: 0;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        padding: 10px 0;
+        min-width: 200px;
+        z-index: 999999;
+    `;
+    
+    // 菜单选项 
+    const options = [
+        {text: "🍃 清理悬浮广告", action: removeFloatingAds},
+        {text: "🔄 绕过跳转追踪", action: removeLinkTrackers},
+        {text: "🛡️ 隐私模式浏览", action: enablePrivacyMode},
+        {text: "📋 复制纯净链接", action: copyCleanLinks}
+    ];
+    
+    options.forEach(opt  => {
+        const item = document.createElement('div'); 
+        item.textContent  = opt.text; 
+        item.style.cssText  = `
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #333;
+            font-size: 14px;
+        `;
+        item.addEventListener('mouseenter',  () => {
+            item.style.background  = '#f0f5ff';
+            item.style.color  = '#2575fc';
+        });
+        item.addEventListener('mouseleave',  () => {
+            item.style.background  = '';
+            item.style.color  = '#333';
+        });
+        item.addEventListener('click',  opt.action); 
+        menu.appendChild(item); 
+    });
+    
+    btn.appendChild(menu); 
+    
+    // 点击外部关闭菜单 
+    setTimeout(() => {
+        document.addEventListener('click',  function closeMenu(e) {
+            if (!menu.contains(e.target)  && e.target  !== btn) {
+                menu.remove(); 
+                btn.innerHTML  = '🔓 广告破解助手';
+                document.removeEventListener('click',  closeMenu);
+            }
+        }, {once: true});
+    }, 10);
+}
+/* ========== 页面功能函数 ========== */
+function detectPageAdLinks() {
+    // 智能检测广告链接的通用方案 
+    const adSelectors = [
+        'a[href*="ad."]',
+        'a[href*="ads."]',
+        'a[href*="track."]',
+        'a[href*="affiliate"]',
+        'iframe[src*="banner"]',
+        'div[id*="ad-container"]',
+        'div[class*="-ad"]',
+        'div[id*="_ads_"]'
+    ];
+    
+    return Array.from(document.querySelectorAll(adSelectors.join(','))); 
+}
+function removeFloatingAds() {
+    // 清理常见浮动广告 
+    const floatAdSelectors = [
+        '#floating-ad',
+        '.popup-ad',
+        '.fixed-ad',
+        '.ad-modal',
+        '[class*="float"]',
+        '[class*="pop"]',
+        '[id*="overlay"]'
+    ];
+    
+    floatAdSelectors.forEach(selector  => {
+        document.querySelectorAll(selector).forEach(el  => el.remove()); 
+    });
+    GM_notification({title: "清理完成", text: "已移除悬浮广告"});
+}
+function removeLinkTrackers() {
+    // 清理链接中的追踪参数 
+    document.querySelectorAll('a[href]').forEach(link  => {
+        try {
+            const url = new URL(link.href); 
+            ['utm_', 'fbclid', 'gclid', 'msclkid'].forEach(param => {
+                if (url.searchParams.has(param))  {
+                    link.href  = link.href.replace(new  RegExp(`[?&]${param}=[^&]+`), '');
+                }
+            });
+        } catch {}
+    });
+    GM_notification({title: "追踪移除", text: "已清理链接追踪参数"});
+}
+/* ========== 跨域注入增强 ========== */
+function ensureScriptInjection() {
+    // 解决跨域CSS隔离问题 
+    const globalStyle = document.createElement('style'); 
+    globalStyle.textContent  = `
+        #${FLOATING_BTN_ID} {
+            all: initial !important; /* 重置所有样式 */
+            /* 重新应用核心样式 */
+            position: fixed !important;
+            z-index: 2147483647 !important;
+            cursor: pointer !important;
+            font-family: sans-serif !important;
+            font-size: 16px !important;
+            /* 其他必要样式... */
+        }
+    `;
+    document.head.appendChild(globalStyle); 
+    
+    // 防止目标网站移除按钮 
+    const observer = new MutationObserver(mutations => {
+        if (!document.getElementById(FLOATING_BTN_ID))  {
+            createGlobalFloatingButton();
+        }
+    });
+    observer.observe(document.body,  {childList: true, subtree: true});
+}
+// 增强版初始化 
+function initUniversalSystem() {
+    ensureScriptInjection();
+    createGlobalFloatingButton();
+    
+    // 添加上下文菜单 
+    GM.registerMenuCommand(" 隐藏/显示悬浮窗", toggleFloatingButton);
+    GM.registerMenuCommand(" 扫描当前页面广告", scanCurrentPageAds);
+}
+(function() {
+    'use strict';
+    
+}// 检查是否已在排除列表 
+    const excludePatterns = [
+        /^https?:\/\/(.*\.)?google\.com\//,
+        /^https?:\/\/(.*\.)?https://cn.bing.com\//
+        /^https?:\/\/(.*\.)?https://bing.com\//
+        /^https?:\/\/(.*\.)?https://baidu.com\//
+        /^https?:\/\/(.*\.)?https://https://voltar.lol\//
+        /^https?:\/\/(.*\.)?https://https://bypass.city\//
+    ];
+    
+    if (excludePatterns.some(pattern  => pattern.test(location.href)))  {
+        return;
+    }
+    
+    // 使用DOMContentLoaded确保页面元素加载 
+    if (document.readyState  === 'loading') {
+        document.addEventListener('DOMContentLoaded',  initUniversalSystem);
+    } else {
+        initUniversalSystem();
+    }
+    
+    // 添加键盘快捷键支持 
+    document.addEventListener('keydown',  e => {
+        if (e.ctrlKey  && e.shiftKey  && e.key  === 'B') {
+            document.getElementById(FLOATING_BTN_ID)?.click(); 
+        }
+    });
+})();
 /* ========== 核心功能整合 ========== */
 // 引擎状态追踪 
 const ENGINE_STATS = {};
@@ -517,4 +899,11 @@ v1.05 (2025-6-2-21:00:00)
 - 修改了UI设置与功能
 - 增强引擎处理逻辑
 -重新定义整个代码集
+*/
+ 【更新日志】
+v1.06 (2025-6-2-21:15:00)
+- 修改了UI在每个网站的显示
+- 默认按钮位置：右下角彩色悬浮按钮 
+- 快捷键：Ctrl+Shift+B 
+- 右键菜单：通过浏览器扩展图标访问 
 */
