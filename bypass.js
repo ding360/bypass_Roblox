@@ -15,6 +15,9 @@ Javascript 复制  // ==UserScript==
 // @connect     api.yescaptcha.com 
 // @require     https://code.jquery.com/jquery-3.6.0.min.js 
 // @require     https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js 
+// @resource updateMeta https://raw.githubusercontent.com/yourname/repo/main/update-meta.json 
+// @downloadURL https://raw.githubusercontent.com/ding360/bypass_Roblox/edit/main/bypass.js  
+// @updateURL https://raw.githubusercontent.com/ding360/bypass_Roblox/main/update-meta.json  
 // ==/UserScript==
  
 /* ========== 匹配域名列表 ========== */
