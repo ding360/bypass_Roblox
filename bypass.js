@@ -18,7 +18,7 @@
 // @resource updateMeta https://raw.githubusercontent.com/yourname/repo/main/update-meta.json 
 // @downloadURL https://raw.githubusercontent.com/ding360/bypass_Roblox/edit/main/bypass.js  
 // @updateURL https://raw.githubusercontent.com/ding360/bypass_Roblox/main/update-meta.json  
-// @iconURL https://github.com/ding360/bypass_Roblox/blob/main/favicon.ico
+// @iconURL https://raw.githubusercontent.com/ding360/bypass_Roblox/refs/heads/main/favicon.ico
 // ==/UserScript==
  
 /* ========== 匹配域名列表 ========== */
